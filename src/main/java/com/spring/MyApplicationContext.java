@@ -2,6 +2,7 @@ package com.spring;
 
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Map;
@@ -34,6 +35,16 @@ public class MyApplicationContext {
         Class clazz = beanDefinition.getClazz();
         try {
             Object newInstance = clazz.getDeclaredConstructor().newInstance();
+
+            //依赖注入
+            Field[] declaredFields = clazz.getDeclaredFields();
+            for (Field declaredField : declaredFields) {
+                if (declaredField.isAnnotationPresent(Autowired.class)) {
+                    Object bean = getBean(declaredField.getName());
+                    declaredField.setAccessible(true);
+                    declaredField.set(newInstance, bean);
+                }
+            }
             return newInstance;
         } catch (InstantiationException e) {
             e.printStackTrace();
