@@ -46,8 +46,14 @@ public class MyApplicationContext {
                 }
             }
 
+            // Aware回调
             if (newInstance instanceof BeanNameAware) {
                 ((BeanNameAware)newInstance).setBeanName(beanName);
+            }
+
+            // 初始化
+            if (newInstance instanceof InitializingBean) {
+                ((InitializingBean)newInstance).afterPropertiesSet();
             }
 
             return newInstance;
