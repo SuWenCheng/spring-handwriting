@@ -1,10 +1,14 @@
 package com.spring;
 
 
+import com.alwin.AppConfig;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,8 +16,9 @@ public class MyApplicationContext {
 
     private final Map<String, Object> singletonMap = new ConcurrentHashMap<>();
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
+    private final List<BeanPostProcessor> beanPostProcessorList = new ArrayList<>();
 
-    private Class<com.alwin.AppConfig> configClass;
+    private Class<AppConfig> configClass;
 
     public MyApplicationContext(Class<com.alwin.AppConfig> configClass) {
         this.configClass = configClass;
@@ -51,19 +56,22 @@ public class MyApplicationContext {
                 ((BeanNameAware)newInstance).setBeanName(beanName);
             }
 
+            // 初始化前
+            for (BeanPostProcessor beanPostProcessor : beanPostProcessorList) {
+                newInstance = beanPostProcessor.postProcessBeforeInitialization(newInstance, beanName);
+            }
+
             // 初始化
             if (newInstance instanceof InitializingBean) {
                 ((InitializingBean)newInstance).afterPropertiesSet();
             }
 
+            for (BeanPostProcessor beanPostProcessor : beanPostProcessorList) {
+                newInstance = beanPostProcessor.postProcessAfterInitialization(newInstance, beanName);
+            }
+
             return newInstance;
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();
         }
         return null;
@@ -90,6 +98,13 @@ public class MyApplicationContext {
                     try {
                         Class<?> clazz = classLoader.loadClass(className);
                         if (clazz.isAnnotationPresent(Component.class)) {
+
+                            if (BeanPostProcessor.class.isAssignableFrom(clazz)) {
+                                BeanPostProcessor instance = (BeanPostProcessor) clazz.getDeclaredConstructor().newInstance();
+                                beanPostProcessorList.add(instance);
+                            }
+
+                            // 设置BeanDefinition
                             Component componentAnnotation = clazz.getDeclaredAnnotation(Component.class);
                             String beanName = componentAnnotation.value();
                             BeanDefinition beanDefinition = new BeanDefinition();
@@ -101,8 +116,10 @@ public class MyApplicationContext {
                                 beanDefinition.setScope("singleton");
                             }
                             beanDefinitionMap.put(beanName, beanDefinition);
+
                         }
-                    } catch (ClassNotFoundException e) {
+                    } catch (ClassNotFoundException | InstantiationException | InvocationTargetException
+                            | NoSuchMethodException | IllegalAccessException e) {
                         e.printStackTrace();
                     }
                 }

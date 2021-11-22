@@ -13,6 +13,16 @@ public class UserService implements BeanNameAware, InitializingBean {
 
     private String beanName;
 
+    private String comment;
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
     public void test() {
         System.out.println(orderService);
     }
@@ -25,5 +35,7 @@ public class UserService implements BeanNameAware, InitializingBean {
     @Override
     public void afterPropertiesSet() {
         System.out.println("afterPropertiesSet");
+        System.out.println(beanName);
+        System.out.println(comment);
     }
 }
