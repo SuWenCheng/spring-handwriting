@@ -10,12 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MyApplicationContext {
 
-    private Map<String, Object> singletonMap = new ConcurrentHashMap<>();
-    private Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
+    private final Map<String, Object> singletonMap = new ConcurrentHashMap<>();
+    private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
 
-    private Class configClass;
+    private Class<com.alwin.AppConfig> configClass;
 
-    public MyApplicationContext(Class configClass) {
+    public MyApplicationContext(Class<com.alwin.AppConfig> configClass) {
         this.configClass = configClass;
 
         // ComponentScan扫描
@@ -25,13 +25,13 @@ public class MyApplicationContext {
             String beanName = entry.getKey();
             BeanDefinition beanDefinition = entry.getValue();
             if (beanDefinition.getScope().equals("singleton")) {
-                singletonMap.put(beanName, createBean(beanDefinition));
+                singletonMap.put(beanName, createBean(beanName, beanDefinition));
             }
         }
 
     }
 
-    private Object createBean(BeanDefinition beanDefinition) {
+    private Object createBean(String beanName, BeanDefinition beanDefinition) {
         Class clazz = beanDefinition.getClazz();
         try {
             Object newInstance = clazz.getDeclaredConstructor().newInstance();
@@ -45,6 +45,11 @@ public class MyApplicationContext {
                     declaredField.set(newInstance, bean);
                 }
             }
+
+            if (newInstance instanceof BeanNameAware) {
+                ((BeanNameAware)newInstance).setBeanName(beanName);
+            }
+
             return newInstance;
         } catch (InstantiationException e) {
             e.printStackTrace();
@@ -58,7 +63,7 @@ public class MyApplicationContext {
         return null;
     }
 
-    private void scan(Class configClass) {
+    private void scan(Class<com.alwin.AppConfig> configClass) {
         ComponentScan declaredAnnotation = (ComponentScan) configClass.getDeclaredAnnotation(ComponentScan.class);
 
         String path = declaredAnnotation.value();
@@ -112,7 +117,7 @@ public class MyApplicationContext {
             return singletonMap.get(beanName);
         }
 
-        return createBean(beanDefinition);
+        return createBean(beanName, beanDefinition);
     }
 
 }
