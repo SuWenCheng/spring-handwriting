@@ -18,14 +18,12 @@ public class MyApplicationContext {
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
     private final List<BeanPostProcessor> beanPostProcessorList = new ArrayList<>();
 
-    private Class<AppConfig> configClass;
-
-    public MyApplicationContext(Class<com.alwin.AppConfig> configClass) {
-        this.configClass = configClass;
+    public MyApplicationContext(Class<AppConfig> configClass) {
 
         // ComponentScan扫描
         scan(configClass);
 
+        // 生成单例的bean
         for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
             String beanName = entry.getKey();
             BeanDefinition beanDefinition = entry.getValue();
@@ -77,18 +75,20 @@ public class MyApplicationContext {
         return null;
     }
 
-    private void scan(Class<com.alwin.AppConfig> configClass) {
-        ComponentScan declaredAnnotation = (ComponentScan) configClass.getDeclaredAnnotation(ComponentScan.class);
+    private void scan(Class<AppConfig> configClass) {
+        ComponentScan declaredAnnotation = configClass.getDeclaredAnnotation(ComponentScan.class);
 
         String path = declaredAnnotation.value();
         path = path.replace('.', '/');
 
         ClassLoader classLoader = MyApplicationContext.class.getClassLoader(); // APP ClassLoader
         URL resource = classLoader.getResource(path);
+        assert resource != null;
         File resFile = new File(resource.getFile());
 
         if (resFile.isDirectory()) {
             File[] files = resFile.listFiles();
+            assert files != null;
             for (File file : files) {
                 String absolutePath = file.getAbsolutePath();
                 if (absolutePath.endsWith(".class")) {
