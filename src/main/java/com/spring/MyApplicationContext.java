@@ -2,6 +2,7 @@ package com.spring;
 
 
 import com.alwin.AppConfig;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 public class MyApplicationContext {
 
     private final Map<String, Object> singletonMap = new ConcurrentHashMap<>();
@@ -35,7 +37,7 @@ public class MyApplicationContext {
     }
 
     private Object createBean(String beanName, BeanDefinition beanDefinition) {
-        Class clazz = beanDefinition.getClazz();
+        Class<?> clazz = beanDefinition.getClazz();
         try {
             Object newInstance = clazz.getDeclaredConstructor().newInstance();
 
@@ -70,7 +72,7 @@ public class MyApplicationContext {
 
             return newInstance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
         return null;
     }
@@ -120,7 +122,7 @@ public class MyApplicationContext {
                         }
                     } catch (ClassNotFoundException | InstantiationException | InvocationTargetException
                             | NoSuchMethodException | IllegalAccessException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage(), e);
                     }
                 }
             }

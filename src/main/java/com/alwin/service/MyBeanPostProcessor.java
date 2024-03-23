@@ -23,12 +23,10 @@ public class MyBeanPostProcessor implements BeanPostProcessor {
         System.out.println("初始化后-" + beanName);
 
         if (beanName.equals("userService")) {
-            Object proxyInstance = Proxy.newProxyInstance(MyBeanPostProcessor.class.getClassLoader(), bean.getClass().getInterfaces(), (proxy, method, args) -> {
+            return Proxy.newProxyInstance(MyBeanPostProcessor.class.getClassLoader(), bean.getClass().getInterfaces(), (proxy, method, args) -> {
                 System.out.println("执行代理逻辑");
                 return method.invoke(bean, args);
             });
-
-            return proxyInstance;
         }
         return bean;
     }
